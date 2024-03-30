@@ -30,21 +30,50 @@ class RTFCommand(
     suspend fun register() {
         commandAPICommand("rtf") {
 
-            subcommand("spectate") {
-
-                withArguments(IntegerArgument("game"))
-
+            subcommand("create") {
+                withArguments(IntegerArgument("gameID"))
                 playerExecutor { player, args ->
                     val gameIndex = args[0] as Int
                     var game = games.getGame(gameIndex)
 
                     plugin.launch {
 
-                        if (game == null && gameIndex == 1) {
+                        if (game == null) {
                             game = games.createAndSave(gameIndex)
+                        } else {
+                            player.sendMessage("game.already.exists")
                         }
 
                         game?.clientSpectate(clients.getClient(player) as ClientRTF)
+                    }
+                }
+            }
+
+            subcommand("list") {
+                playerExecutor { player, _ ->
+                    val length = games.games.size
+                    player.sendMessage("List of games ($length):")
+                    for (game in games.games) {
+                        player.sendMessage("#${game.id} - ${game.players.size}/${game.config.game.maxGames} - ${game.state()}")
+                    }
+                }
+            }
+
+            subcommand("spectate") {
+                withArguments(IntegerArgument("gameID"))
+                playerExecutor { player, args ->
+                    val gameIndex = args[0] as Int
+                    var game = games.getGame(gameIndex)
+
+                    if (game == null) {
+                        player.sendMessage("game.not.exists")
+                    } else {
+                        plugin.launch {
+
+                            game = games.createAndSave(gameIndex)
+
+                            game?.clientSpectate(clients.getClient(player) as ClientRTF)
+                        }
                     }
                 }
             }
@@ -105,10 +134,15 @@ class RTFCommand(
 
             subcommand("end") {
                 withPermission("rtf.end")
-                playerExecutor { player, _ ->
-                    val game = games.getByWorld(player.world) ?: return@playerExecutor
-
-                    plugin.launch { game.end(null) }
+                withArguments(IntegerArgument("gameID"))
+                playerExecutor { player, args ->
+                    val gameId = args[0] as Int
+                    player.sendMessage("game.ask.delete")
+                    val game = games.getGame(gameId)
+                    plugin.launch {
+                        game?.end(null)
+                        player.sendMessage("game.deleted")
+                    }
                 }
             }
         }
