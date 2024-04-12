@@ -32,6 +32,7 @@ class RTFCommand(
 
             subcommand("create") {
                 withArguments(IntegerArgument("gameID"))
+                withPermission("rtf.command.create")
                 playerExecutor { player, args ->
                     val gameIndex = args[0] as Int
                     var game = games.getGame(gameIndex)
@@ -42,6 +43,7 @@ class RTFCommand(
                             game = games.createAndSave(gameIndex)
                         } else {
                             player.sendMessage("game.already.exists")
+                            return@launch
                         }
 
                         game?.clientSpectate(clients.getClient(player) as ClientRTF)
@@ -50,6 +52,7 @@ class RTFCommand(
             }
 
             subcommand("list") {
+                withPermission("rtf.command.list")
                 playerExecutor { player, _ ->
                     val length = games.games.size
                     player.sendMessage("List of games ($length):")
@@ -61,24 +64,19 @@ class RTFCommand(
 
             subcommand("spectate") {
                 withArguments(IntegerArgument("gameID"))
+                withPermission("rtf.command.spectate")
                 playerExecutor { player, args ->
                     val gameIndex = args[0] as Int
-                    var game = games.getGame(gameIndex)
+                    val game = games.getGame(gameIndex)
 
                     if (game == null) {
                         player.sendMessage("game.not.exists")
-                    } else {
-                        plugin.launch {
-
-                            game = games.createAndSave(gameIndex)
-
-                            game?.clientSpectate(clients.getClient(player) as ClientRTF)
-                        }
                     }
                 }
             }
 
             subcommand("join") {
+                withPermission("rtf.command.join")
                 playerExecutor { player, _ ->
                     val game = games.getByWorld(player.world) ?: return@playerExecutor
 
