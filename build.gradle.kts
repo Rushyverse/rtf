@@ -18,7 +18,7 @@ repositories {
 dependencies {
     val paperVersion = "1.20-R0.1-SNAPSHOT"
     val rushyApiVersion = "2.1.0"
-    val commandApiVersion = "9.0.3"
+    val commandApiVersion = "9.4.1"
 
     compileOnly(kotlin("stdlib"))
 
