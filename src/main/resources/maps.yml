@@ -1,6 +1,15 @@
 - !<classic>
   worldTemplateName: mapClassic.yml
-  limitY: 40
+  minPlayers: 4
+  mapCuboid:
+    location1:
+      x: 42
+      y: 40
+      z: 83
+    location2:
+      x: -46
+      y: 110
+      z: -85
   allowedBlocks:
     - SMOOTH_SANDSTONE
   teams:
