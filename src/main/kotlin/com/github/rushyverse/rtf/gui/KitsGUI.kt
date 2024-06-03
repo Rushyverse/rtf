@@ -3,6 +3,7 @@ package com.github.rushyverse.rtf.gui
 import com.github.rushyverse.api.extension.withoutItalic
 import com.github.rushyverse.api.player.Client
 import com.github.rushyverse.api.translation.getComponent
+import com.github.rushyverse.rtf.client.ClientRTF
 import com.github.rushyverse.rtf.config.Kit
 import com.github.rushyverse.rtf.config.KitsConfig
 import com.github.rushyverse.rtf.gui.commons.GUI
@@ -31,7 +32,7 @@ class KitsGUI(
                         .withoutItalic()
                 )
             )
-           meta.addItemFlags(*ItemFlag.entries.toTypedArray())
+            meta.addItemFlags(*ItemFlag.entries.toTypedArray())
         }
     }
 
@@ -49,7 +50,7 @@ class KitsGUI(
 
         client.requirePlayer().inventory.apply {
             clear()
-            selectedKit.sendItems(this)
+            selectedKit.giveKit(client as ClientRTF)
         }
     }
 }
