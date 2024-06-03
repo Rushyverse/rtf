@@ -10,7 +10,7 @@ class AuthenticationListener : ListenerRTF() {
     suspend fun onQuit(event: PlayerQuitEvent) {
         val player = event.player
         val world = player.world
-        val game = games.getByWorld(world)
+        val game = games.getGame(world)
 
         game?.apply {
             clientLeave(clients.getClient(player) as ClientRTF)
