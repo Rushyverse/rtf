@@ -3,10 +3,86 @@ kits:
     name: kit.rusher.name
     description: kit.rusher.description
     icon:
-      material: IRON_CHESTPLATE
+      material: CHAINMAIL_CHESTPLATE
     armor:
       helmet:
         material: IRON_HELMET
+        unbreakable: true
+        enchantments:
+          protection: 1
+      chestplate:
+        material: CHAINMAIL_CHESTPLATE
+        unbreakable: true
+        enchantments:
+          protection: 1
+      leggings:
+        material: CHAINMAIL_LEGGINGS
+        unbreakable: true
+        enchantments:
+          protection: 2
+      boots:
+        material: IRON_BOOTS
+        unbreakable: true
+        enchantments:
+          protection: 1
+    items:
+      - !<sword>
+        material: GOLDEN_SWORD
+        unbreakable: true
+      - !<pickaxe>
+        material: IRON_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 1
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+  - !<tank>
+    name: kit.tank.name
+    description: kit.tank.description
+    icon:
+      material: DIAMOND_CHESTPLATE
+    armor:
+      helmet:
+        material: GOLDEN_HELMET
+        unbreakable: true
+        enchantments:
+          protection: 1
+      chestplate:
+        material: DIAMOND_CHESTPLATE
+        unbreakable: true
+        enchantments:
+          protection: 2
+      leggings:
+        material: CHAINMAIL_LEGGINGS
+        unbreakable: true
+        enchantments:
+          protection: 2
+      boots:
+        material: LEATHER_BOOTS
+        unbreakable: true
+        enchantments:
+          protection: 1
+    items:
+      - !<sword>
+        material: WOODEN_SWORD
+        unbreakable: true
+      - !<pickaxe>
+        material: IRON_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 1
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+  - !<archer>
+    name: kit.archer.name
+    description: kit.archer.description
+    icon:
+      material: BOW
+    armor:
+      helmet:
+        material: DIAMOND_HELMET
         unbreakable: true
         enchantments:
           protection: 1
@@ -21,7 +97,96 @@ kits:
         enchantments:
           protection: 2
       boots:
-        material: IRON_BOOTS
+        material: DIAMOND_BOOTS
+        unbreakable: true
+        enchantments:
+          protection: 1
+    items:
+      - !<sword>
+        material: STONE_SWORD
+        unbreakable: true
+      - !<pickaxe>
+        material: IRON_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 1
+      - !<bow>
+        material: BOW
+        unbreakable: true
+        enchantments:
+          power: 3
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+      - !<arrows>
+        material: ARROW
+        amount: 12
+  - !<engineer>
+    name: kit.engineer.name
+    description: kit.engineer.description
+    icon:
+      material: REDSTONE_TORCH
+    features:
+      - autobridge
+      - ladderfly
+    armor:
+      helmet:
+        material: GOLDEN_HELMET
+        unbreakable: true
+        enchantments:
+          protection: 1
+      chestplate:
+        material: IRON_CHESTPLATE
+        unbreakable: true
+        enchantments:
+          protection: 1
+      leggings:
+        material: IRON_LEGGINGS
+        unbreakable: true
+        enchantments:
+          protection: 2
+      boots:
+        material: GOLDEN_BOOTS
+        unbreakable: true
+        enchantments:
+          protection: 1
+    items:
+      - !<sword>
+        material: STONE_SWORD
+        unbreakable: true
+      - !<pickaxe>
+        material: GOLDEN_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 2
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+  - !<switcher>
+    name: kit.switcher.name
+    description: kit.switcher.description
+    icon:
+      material: SNOWBALL
+    features:
+      - snowballswitch
+    armor:
+      helmet:
+        material: LEATHER_HELMET
+        unbreakable: true
+        enchantments:
+          protection: 1
+      chestplate:
+        material: IRON_CHESTPLATE
+        unbreakable: true
+        enchantments:
+          protection: 1
+      leggings:
+        material: IRON_LEGGINGS
+        unbreakable: true
+        enchantments:
+          protection: 2
+      boots:
+        material: LEATHER_BOOTS
         unbreakable: true
         enchantments:
           protection: 1
@@ -30,10 +195,109 @@ kits:
         material: IRON_SWORD
         unbreakable: true
       - !<pickaxe>
-        material: IRON_PICKAXE
+        material: GOLDEN_PICKAXE
         unbreakable: true
         enchantments:
-          efficiency: 1
+          efficiency: 2
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+  - !<kamikaze>
+    name: kit.kamikaze.name
+    description: kit.kamikaze.description
+    icon:
+      material: TNT
+    features:
+      - tntfly
+    armor:
+      helmet:
+        material: CHAINMAIL_HELMET
+        unbreakable: true
+        enchantments:
+          protection: 1
+      chestplate:
+        material: IRON_CHESTPLATE
+        unbreakable: true
+        enchantments:
+          protection: 1
+      leggings:
+        material: CHAINMAIL_LEGGINGS
+        unbreakable: true
+        enchantments:
+          protection: 2
+      boots:
+        material: DIAMOND_BOOTS
+        unbreakable: true
+        enchantments:
+          protection: 1
+          feather_falling: 3
+    items:
+      - !<sword>
+        material: GOLDEN_SWORD
+        unbreakable: true
+      - !<pickaxe>
+        material: GOLDEN_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 2
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+  - !<speedster>
+    name: kit.speedster.name
+    description: kit.speedster.description
+    icon:
+      material: POTION
+    armor:
+      helmet:
+        material: CHAINMAIL_HELMET
+        unbreakable: true
+        enchantments:
+          protection: 1
+      chestplate:
+        material: IRON_CHESTPLATE
+        unbreakable: true
+        enchantments:
+          protection: 1
+      leggings:
+        material: CHAINMAIL_LEGGINGS
+        unbreakable: true
+        enchantments:
+          protection: 2
+      boots:
+        material: DIAMOND_BOOTS
+        unbreakable: true
+        enchantments:
+          protection: 1
+    items:
+      - !<sword>
+        material: GOLDEN_SWORD
+        unbreakable: true
+      - !<pickaxe>
+        material: GOLDEN_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 2
+      - !<blocks>
+        material: SMOOTH_SANDSTONE
+        amount: 64
+  - !<nokit>
+    name: kit.nokit.name
+    description: kit.nokit.description
+    icon:
+      material: GLASS
+    items:
+      - !<sword>
+        material: DIAMOND_SWORD
+        unbreakable: true
+        enchantments:
+          sharpness: 5
+          fire_aspect: 2
+      - !<pickaxe>
+        material: DIAMOND_PICKAXE
+        unbreakable: true
+        enchantments:
+          efficiency: 5
       - !<blocks>
         material: SMOOTH_SANDSTONE
         amount: 64
