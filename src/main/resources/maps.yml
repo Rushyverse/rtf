@@ -8,7 +8,7 @@
       z: 83
     location2:
       x: -46
-      y: 110
+      y: 80
       z: -85
   allowedBlocks:
     - SMOOTH_SANDSTONE
