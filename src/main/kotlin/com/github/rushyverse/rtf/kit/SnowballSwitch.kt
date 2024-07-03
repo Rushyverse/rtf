@@ -37,6 +37,9 @@ class SnowballSwitch : KitFeature("snowballswitch") {
                 // Swap the positions
                 shooter.teleport(hitPlayerLocation)
                 hitPlayer.teleport(shooterLocation)
+
+                hitPlayer.sendMessage("${shooter.name} has switched places with you!")
+                shooter.sendMessage("You have switched places with ${hitPlayer.name}!")
             }
         }
     }
