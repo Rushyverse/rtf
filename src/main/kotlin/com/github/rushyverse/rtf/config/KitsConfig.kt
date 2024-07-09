@@ -1,10 +1,11 @@
 package com.github.rushyverse.rtf.config
 
 import com.github.rushyverse.api.serializer.ItemStackSerializer
+import com.github.rushyverse.rtf.client.ClientRTF
+import com.github.rushyverse.rtf.kit.KitFeature.Companion.featureMap
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.PlayerInventory
 
 typealias ItemStackSerializable = @Contextual ItemStack
 
@@ -20,19 +21,36 @@ data class Kit(
     val name: String,
     val description: String,
     val icon: ItemStackSerializable,
-    val armor: ArmorConfig,
-    val items: Set<@Serializable(with = ItemStackSerializer::class) ItemStack>
+    val features: Set<String> = emptySet(),
+    val armor: ArmorConfig? = null,
+    val items: Set<@Serializable(with = ItemStackSerializer::class) ItemStack>,
 ) {
 
-    fun sendItems(inventory: PlayerInventory) {
+    fun giveKit(client: ClientRTF) {
+        val inventory = client.player!!.inventory
         armor.let {
-            inventory.helmet = it.helmet
-            inventory.chestplate = it.chestplate
-            inventory.leggings = it.leggings
-            inventory.boots = it.boots
+            if (it != null) {
+                inventory.helmet = it.helmet
+            }
+            if (it != null) {
+                inventory.chestplate = it.chestplate
+            }
+            if (it != null) {
+                inventory.leggings = it.leggings
+            }
+            if (it != null) {
+                inventory.boots = it.boots
+            }
         }
 
         inventory.addItem(*items.toTypedArray())
+
+        // Give items of features attributed to this kit
+        features?.forEach { featureName ->
+            val feature = featureMap[featureName]!!
+            feature.item()?.apply { inventory.addItem(this) }
+            // feature.onGiveKit(client) (not working properly)
+        }
     }
 }
 
