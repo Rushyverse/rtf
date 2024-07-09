@@ -1,6 +1,5 @@
 package com.github.rushyverse.rtf.listener
 
-import com.github.rushyverse.api.extension.event.cancel
 import com.github.rushyverse.api.extension.event.cancelIf
 import com.github.rushyverse.api.extension.isWool
 import com.github.rushyverse.api.game.GameState
@@ -9,6 +8,7 @@ import com.github.rushyverse.api.translation.getComponent
 import com.github.rushyverse.rtf.client.ClientRTF
 import com.github.rushyverse.rtf.game.Game
 import com.github.rushyverse.rtf.game.TeamRTF
+import com.github.rushyverse.rtf.runnable.RespawnState
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.GameMode
 import org.bukkit.entity.EntityType
@@ -27,7 +27,7 @@ class GameListener : ListenerRTF() {
     suspend fun onChangeWorld(event: PlayerChangedWorldEvent) {
         val from = event.from
         if (isRTFWorld(from)) {
-            val game = games.getByWorld(from) ?: return
+            val game = games.getGame(from) ?: return
             val player = event.player
             game.clientLeave(clients.getTypedClient(player))
         }
@@ -45,12 +45,35 @@ class GameListener : ListenerRTF() {
     }
 
     @EventHandler
+    suspend fun onEntityDamage(event: EntityDamageEvent) {
+        val entity = event.entity
+        val world = entity.world
+        val game = games.getGame(world) ?: return
+
+        if (entity.type != EntityType.PLAYER) {
+            event.isCancelled = true
+        } else {
+            val client = clients.getTypedClient<ClientRTF>(entity.name)
+
+            if (game.state() != GameState.STARTED) {
+                event.isCancelled = true
+            } else {
+                val team = game.getClientTeam(client) ?: return
+
+                if (team.spawnCuboid.isInArea(entity.location)) {
+                    event.isCancelled = true
+                }
+            }
+        }
+    }
+
+    @EventHandler
     suspend fun onPlayerDeath(event: PlayerDeathEvent) {
         val player = event.player
 
-        if (!isRTFWorld(player.world)) { return }
+        if (!isRTFWorld(player.world)) return
 
-        val game = games.getByWorld(player.world) ?: return
+        val game = games.getGame(player.world) ?: return
         val client = clients.getTypedClient<ClientRTF>(player)
         val team = game.getClientTeam(client) ?: return
         val killer = player.killer
@@ -72,7 +95,13 @@ class GameListener : ListenerRTF() {
 
         args.add("<$playerColor>${player.name}</$playerColor>")
         if (killer == null) {
-            deathTypeKey = "player.death.void"
+            val standBlock = player.location.add(0.0, -1.0, 0.0).block.type
+            deathTypeKey =
+                if (standBlock.isAir)
+                    "player.death.void"
+                else if (standBlock.isBlock)
+                    "player.death.fall"
+                else ""
         } else {
             val clientKiller = clients.getTypedClient<ClientRTF>(killer)
             val killerTeam = game.getClientTeam(clientKiller)
@@ -114,33 +143,10 @@ class GameListener : ListenerRTF() {
 
 
     @EventHandler
-    suspend fun onEntityDamage(event: EntityDamageEvent) {
-        val entity = event.entity
-        val world = entity.world
-        val game = games.getByWorld(world) ?: return
-
-        if (entity.type != EntityType.PLAYER) {
-            event.isCancelled = true
-        } else {
-            val client = clients.getTypedClient<ClientRTF>(entity.name)
-
-            if (game.state() != GameState.STARTED) {
-                event.isCancelled = true
-            } else {
-                val team = game.getClientTeam(client) ?: return
-
-                if (team.spawnCuboid.isInArea(entity.location)) {
-                    event.isCancelled = true
-                }
-            }
-        }
-    }
-
-    @EventHandler
     suspend fun onPlayerRespawn(event: PlayerRespawnEvent) {
         val player = event.player
         val world = player.world
-        val game = games.getByWorld(world) ?: return
+        val game = games.getGame(world) ?: return
         val client = clients.getTypedClient<ClientRTF>(player)
         val team = game.getClientTeam(client)
 
@@ -148,6 +154,8 @@ class GameListener : ListenerRTF() {
             event.respawnLocation = world.spawnLocation
         } else {
             event.respawnLocation = team.spawnPoint
+            client.respawnState = true
+            RespawnState(client, game, 3).runTaskTimer(plugin, 0, 20)
         }
     }
 
@@ -155,9 +163,15 @@ class GameListener : ListenerRTF() {
     suspend fun onMove(event: PlayerMoveEvent) {
         val player = event.player
         val world = player.world
-        val game = games.getByWorld(world) ?: return
+        val game = games.getGame(world) ?: return
+        val client = clients.getTypedClient<ClientRTF>(player)
 
-        if (event.to.y <= game.mapConfig.limitY) {
+        if (client.respawnState) {
+            //event.to = event.from
+            return
+        }
+
+        if (event.to.y <= game.mapConfig.mapCuboid.min.y) {
             val gameMode = player.gameMode
             if (gameMode == GameMode.SPECTATOR) {
                 player.teleport(game.world.spawnLocation)
@@ -167,11 +181,14 @@ class GameListener : ListenerRTF() {
         }
     }
 
+    /**
+     *
+     * @param event BlockPlaceEvent
+     */
     @EventHandler
     suspend fun onBlockPlace(event: BlockPlaceEvent) {
         val player = event.player
-        val game = games.getByWorld(player.world) ?: return
-
+        val game = games.getGame(player.world) ?: return
         if (game.state() != GameState.STARTED) {
             event.isCancelled = true
         } else {
@@ -182,6 +199,7 @@ class GameListener : ListenerRTF() {
             if (game.isProtectedLocation(blockLoc)) {
                 event.isCancelled = true
 
+                // Flag place check
                 if (block.type.name.contains("WOOL")) {
                     val clientTeam = game.getClientTeam(client) ?: return
 
@@ -202,7 +220,7 @@ class GameListener : ListenerRTF() {
     @EventHandler
     suspend fun onBlockBreak(event: BlockBreakEvent) {
         val player = event.player
-        val game = games.getByWorld(player.world) ?: return
+        val game = games.getGame(player.world) ?: return
 
         if (game.state() != GameState.STARTED) {
             event.isCancelled = true
@@ -233,7 +251,6 @@ class GameListener : ListenerRTF() {
                 !game.isBlockAllowed(type) -> event.isCancelled = true
                 else -> event.isDropItems = false
             }
-
         }
     }
 }
