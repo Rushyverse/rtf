@@ -42,7 +42,7 @@ class Game(
     val config: RTFConfig,
     val mapConfig: MapConfig
 ) {
-    val data = GameData("rtf", id)
+    var data = GameData("rtf", id)
 
     val players: Collection<Player>
         get() = world.players
@@ -66,7 +66,7 @@ class Game(
         if (force) {
             data.state = GameState.STARTED
 
-            broadcast("game.message.started", NamedTextColor.GREEN)
+            broadcast("game.message.started")
 
             teams.forEach { team ->
                 team.members.forEach { member ->
@@ -82,9 +82,7 @@ class Game(
             gameTask.run()
         } else {
             val time = AtomicInteger(5)
-
             data.state = GameState.STARTING
-
             gameTask.add { startingTask(this, time) }
             gameTask.run()
         }
@@ -92,8 +90,17 @@ class Game(
         manager.sharedGameData.saveUpdate(data)
     }
 
-    private suspend fun startingTask(task: SchedulerTask.Task, atomicTime: AtomicInteger) {
+    fun playersInTeams() : Int {
+        var players = 0
+        teams.forEach {
+            players+=it.members.size
+        }
+        return players
+    }
+
+    suspend fun startingTask(task: SchedulerTask.Task, atomicTime: AtomicInteger) {
         val time = atomicTime.get()
+
         if (time == 0) {
             task.remove() // end the repeating task
             start(true)
@@ -101,8 +108,7 @@ class Game(
         }
         broadcast(
             "game.message.starting",
-            NamedTextColor.GREEN,
-            argumentBuilder = { arrayOf("$time") }
+            argumentBuilder = { arrayOf("$time") },
         )
         atomicTime.set(time - 1)
     }
@@ -186,7 +192,7 @@ class Game(
         val colorName = joinedTeam.type.name.lowercase()
 
         client.kit = plugin.configKits.kits.firstOrNull()?.apply {
-            sendItems(player.inventory)
+            giveKit(client)
         }
 
         broadcast(
@@ -203,6 +209,16 @@ class Game(
 
         if (startedTime == 0L)
             GameScoreboard.update(client, this)
+
+        val minPlayers = mapConfig.minPlayers / teams.size
+        var teamReadyCount = 0
+        for (team in teams){
+            if (team.members.size >= minPlayers) {
+                teamReadyCount++
+            }
+        }
+        if (teamReadyCount == teams.size)
+            start()
     }
 
     suspend fun clientLeave(client: ClientRTF) {
@@ -237,7 +253,6 @@ class Game(
 
                 else -> {}
             }
-
         }
 
         manager.sharedGameData.saveUpdate(data)
@@ -280,7 +295,7 @@ class Game(
         client.requirePlayer().apply {
             inventory.clear()
             removePotionEffect(PotionEffectType.SPEED)
-            client.kit?.sendItems(inventory)
+            client.kit?.giveKit(client)
         }
 
         flagTeam.flagStolenState = false
@@ -320,7 +335,7 @@ class Game(
      * The game state is set to ENDING while players are teleported and the world is destroyed.
      */
     suspend fun end(winTeam: TeamRTF?) {
-        data.state = GameState.ENDING
+        data.state = GameState.ENDED
         gameTask.cancelAndJoin()
         manager.sharedGameData.saveUpdate(data)
 
@@ -419,12 +434,21 @@ class Game(
      */
     suspend fun broadcast(
         key: String,
-        color: NamedTextColor = NamedTextColor.WHITE,
+        color: NamedTextColor? = null,
         argumentBuilder: Translator.(Locale) -> Array<Any> = { emptyArray() }
-    ) = plugin.broadcast(world.players, key, argumentBuilder = argumentBuilder, messageModifier = { it.color(color) })
+    ) = plugin.broadcast(world.players, key, argumentBuilder = argumentBuilder)
 
+    /**
+     * Method to know if a location is protected.
+     * That's include for teams spawn area, flag area and also the game area.
+     *
+     * @param location Location you want to check the protection status.
+     * @return Boolean true if the location provided is in a protected area, the method return true, false otherwise.
+     */
     fun isProtectedLocation(location: Location): Boolean {
-        return teams.any { it.spawnCuboid.isInArea(location) || it.flagCuboid.isInArea(location) }
+        return teams.any { it.spawnCuboid.isInArea(location)
+                || it.flagCuboid.isInArea(location) }
+                || !mapConfig.mapCuboid.isInArea(location)
     }
 
     fun isBlockAllowed(blockType: Material): Boolean {

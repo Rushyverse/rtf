@@ -1,5 +1,7 @@
 package com.github.rushyverse.rtf.game
 
+import com.github.rushyverse.api.game.GameData
+import com.github.rushyverse.api.game.GameState
 import com.github.rushyverse.api.game.SharedGameData
 import com.github.rushyverse.api.koin.inject
 import com.github.rushyverse.rtf.RTFPlugin
@@ -19,9 +21,11 @@ class GameManager(
     val sharedGameData: SharedGameData by inject<SharedGameData>()
     val games: MutableList<Game> = mutableListOf()
 
-    fun getByWorld(world: World): Game? {
+    fun getGame(world: World): Game? {
         games.forEach {
-            if (it.world == world) return it
+            if (it.world == world) {
+                return it
+            }
         }
 
         return null
@@ -36,10 +40,27 @@ class GameManager(
         var world = plugin.server.getWorld(worldName)
         if (world == null) {
             world = createWorldFromTemplate(worldName)
-            return Game(plugin, gameIndex, world, plugin.config, plugin.configMaps[0]).also {
-                games.add(it)
+            val mapConfig = plugin.configMaps[0].copy().apply {
+                mapCuboid.apply {
+                    min.world = world
+                    max.world = world
+                }
+            }
+            return Game(plugin, gameIndex, world, plugin.config, mapConfig).also { game ->
+                games.add(game)
 
-                sharedGameData.saveUpdate(it.data)
+                sharedGameData.apply {
+
+                    val gameData = games.find { it.id == gameIndex }
+
+                    if (gameData == null) {
+                        saveUpdate(game.data)
+                    } else {
+                        gameData.state = GameState.WAITING
+                        game.data = gameData
+                        callOnChange()
+                    }
+                }
             }
         } else {
             throw IllegalStateException("A game already exists for this world $worldName")
@@ -91,13 +112,18 @@ class GameManager(
         }
 
         sharedGameData.apply {
-            games.removeIf { it.id == game.id }
+            val data = game.data
+
+            if (data.permanent){
+                data.state =  GameState.NOT_STARTED
+            }
+
+            games.removeIf { it.id == game.id && !game.data.permanent }
             callOnChange()
         }
 
         games.remove(game)
     }
-
 
     fun getGame(gameIndex: Int) = games.firstOrNull { it.id == gameIndex }
 }

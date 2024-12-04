@@ -10,9 +10,11 @@ import com.github.rushyverse.rtf.client.ClientRTF
 import com.github.rushyverse.rtf.game.GameManager
 import com.github.shynixn.mccoroutine.bukkit.launch
 import dev.jorel.commandapi.arguments.IntegerArgument
+import dev.jorel.commandapi.arguments.StringArgument
 import dev.jorel.commandapi.kotlindsl.*
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.entity.Player
 
 class RTFCommand(
     private val plugin: RTFPlugin
@@ -30,28 +32,125 @@ class RTFCommand(
     suspend fun register() {
         commandAPICommand("rtf") {
 
-            subcommand("spectate") {
+            // OP-ONLY
+            subcommand("create") {
+                withArguments(IntegerArgument("gameID"))
+                withPermission("rtf.command.create")
 
-                withArguments(IntegerArgument("game"))
-
-                playerExecutor { player, args ->
+                anyExecutor { commandSender, args ->
                     val gameIndex = args[0] as Int
                     var game = games.getGame(gameIndex)
 
                     plugin.launch {
-
-                        if (game == null && gameIndex == 1) {
+                        if (game == null) {
                             game = games.createAndSave(gameIndex)
+                        } else {
+                            commandSender.sendMessage("game.already.exists")
+                            return@launch
                         }
+                        if (commandSender is Player) {
+                            game?.clientSpectate(clients.getClient(commandSender) as ClientRTF)
+                        }
+                    }
+                }
+            }
 
-                        game?.clientSpectate(clients.getClient(player) as ClientRTF)
+            // OP-ONLY
+            subcommand("list") {
+                withPermission("rtf.command.list")
+
+                playerExecutor { player, _ ->
+                    val length = games.games.size
+                    player.sendMessage("List of games ($length):")
+                    for (game in games.games) {
+                        player.sendMessage("#${game.id} - ${game.players.size}/${game.config.game.maxGames} - ${game.state()}")
+                    }
+                }
+            }
+
+            // OP-ONLY
+            subcommand("start") {
+                withPermission("rtf.command.start")
+                withOptionalArguments(StringArgument("force"))
+
+                playerExecutor { player, args ->
+                    val game = games.getGame(player.world) ?: return@playerExecutor
+                    val force = args[0] as String?
+
+                    if (game.state() == GameState.WAITING) {
+                        val forceStart= force == "force"
+                        plugin.launch {
+                            game.start(forceStart)
+                        }
+                    } else {
+                        player.sendMessage("The game has already started.")
+                    }
+                }
+            }
+
+            // OP-ONLY
+            subcommand("end") {
+                withPermission("rtf.end")
+                withArguments(IntegerArgument("gameID"))
+
+                anyExecutor { player, args ->
+                    val gameId = args[0] as Int
+                    player.sendMessage("game.ask.delete")
+                    val game = games.getGame(gameId)
+                    plugin.launch {
+                        game?.end(null)
+                        player.sendMessage("game.deleted")
+                    }
+                }
+            }
+
+            // OP-ONLY
+            subcommand("win") {
+                withPermission("rtf.win")
+                stringArgument("team")
+
+                playerExecutor { player, arg ->
+                    val teamName = arg[0].toString()
+                    val type = TeamType.valueOf(teamName.uppercase())
+                    val game = games.getGame(player.world) ?: return@playerExecutor
+
+                    if (game.state() != GameState.STARTED) {
+                        player.sendMessage("La game n'a pas commencé.")
+                        return@playerExecutor
+                    }
+
+                    val team = game.teams.firstOrNull { it.type == type }
+
+                    if (team == null) {
+                        player.sendMessage("The team '$teamName' does not exist.")
+                        return@playerExecutor
+                    }
+
+                    plugin.launch { game.end(team) }
+                }
+            }
+
+            subcommand("spectate") {
+                withArguments(IntegerArgument("gameID"))
+                // withPermission("rtf.command.spectate")
+
+                playerExecutor { player, args ->
+                    val gameIndex = args[0] as Int
+                    val game = games.getGame(gameIndex)
+
+                    if (game == null) {
+                        player.sendMessage("game.not.exists")
+                    } else {
+                        plugin.launch { game.clientSpectate(clients.getClient(player) as ClientRTF) }
                     }
                 }
             }
 
             subcommand("join") {
+                // withPermission("rtf.command.join")
+
                 playerExecutor { player, _ ->
-                    val game = games.getByWorld(player.world) ?: return@playerExecutor
+                    val game = games.getGame(player.world) ?: return@playerExecutor
 
                     plugin.launch {
                         val client = clients.getClient(player) as ClientRTF
@@ -71,44 +170,16 @@ class RTFCommand(
                 }
             }
 
-            subcommand("start") {
-                withPermission("rtf.command.start")
-                playerExecutor { player, _ ->
-                    val game = games.getByWorld(player.world) ?: return@playerExecutor
+            subcommand("kits") {
+                //  withPermission("rtf.kits")
 
-                    if (game.state() != GameState.STARTED) {
-                        plugin.launch { game.start(true) }
-                    } else {
-                        player.sendMessage("The game is already started.")
+                playerExecutor { player, args ->
+                    val game = games.getGame(player.world)
+                    if (game != null) {
+                        plugin.launch {
+                            plugin.kitsGui.open(clients.getClient(player))
+                        }
                     }
-                }
-            }
-
-            // DEV
-            subcommand("win") {
-                withPermission("rtf.win")
-                stringArgument("team")
-                playerExecutor { player, arg ->
-                    val teamName = arg[0].toString()
-                    val type = TeamType.valueOf(teamName.uppercase())
-                    val game = games.getByWorld(player.world) ?: return@playerExecutor
-                    val team = game.teams.firstOrNull { it.type == type }
-
-                    if (team == null) {
-                        player.sendMessage("The team '$teamName' does not exist.")
-                        return@playerExecutor
-                    }
-
-                    plugin.launch { game.end(team) }
-                }
-            }
-
-            subcommand("end") {
-                withPermission("rtf.end")
-                playerExecutor { player, _ ->
-                    val game = games.getByWorld(player.world) ?: return@playerExecutor
-
-                    plugin.launch { game.end(null) }
                 }
             }
         }

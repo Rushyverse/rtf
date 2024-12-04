@@ -11,7 +11,8 @@ import org.bukkit.Material
 @SerialName("map")
 data class MapConfig(
     val worldTemplateName: String,
-    val limitY: Int,
+    val minPlayers: Int,
+    val mapCuboid: CubeArea,
     val allowedBlocks: Set<Material>,
     val teams: List<TeamRTFConfig>
 )

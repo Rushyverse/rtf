@@ -9,8 +9,11 @@ import java.util.*
 class ClientRTF(
     val stats: RTFStats = RTFStats(),
     uuid: UUID,
+    val coins: Int = 0,
     scope: CoroutineScope
 ) : Client(uuid, scope) {
+
+    var respawnState: Boolean = false
 
     /**
      * Represents the current kit of the player.

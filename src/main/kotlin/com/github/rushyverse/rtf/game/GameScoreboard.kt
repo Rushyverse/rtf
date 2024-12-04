@@ -115,7 +115,8 @@ object GameScoreboard {
     }
 
     private fun translateStateLine(timeFormatted: String, game: Game, locale: Locale) = when (game.state()) {
-        GameState.WAITING -> translateLine("waiting", locale)
+        GameState.NOT_STARTED -> translateLine("notStarted", locale)
+        GameState.WAITING -> translateLine("waiting", locale, arrayOf(game.playersInTeams(), game.mapConfig.minPlayers))
         GameState.STARTING -> translateLine("starting", locale, arrayOf(timeFormatted))
         GameState.STARTED -> translateLine(
             "started",
@@ -123,8 +124,7 @@ object GameScoreboard {
             arrayOf("<yellow>$timeFormatted"),
             NamedTextColor.LIGHT_PURPLE
         )
-
-        GameState.ENDING -> translateLine(
+        GameState.ENDED -> translateLine(
             "ending", locale, arrayOf(
                 "<${game.teamWon.type.name.lowercase()}>${game.teamWon.type.name(translator, locale)}"
             ),
